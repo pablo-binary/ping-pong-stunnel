@@ -1,0 +1,49 @@
+version: '3.6'
+
+services:
+  mitm:
+    image: node:13
+    networks:
+      - pingpong
+    ports:
+      - "50125:80"
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    command: npx nodemon mitm.js
+
+  mitmtls:
+    build: ./stunnel
+    volumes:
+      - ./mitmtls.conf:/etc/stunnel/stunnel.conf
+      - ./mitm.pem:/etc/stunnel/mitm.pem
+    networks:
+      - pingpong
+    ports:
+      - "50126:50126"
+
+  pongtls:
+    build: ./stunnel
+    volumes:
+      - ./pongtls.conf:/etc/stunnel/stunnel.conf
+      - ./pong.pem:/etc/stunnel/pong.pem
+    networks:
+      - pingpong
+    ports:
+      - "50068:50068"
+    depends_on:
+      - pong
+
+  pong:
+    image: node:13
+    networks:
+      - pingpong
+    ports:
+      - "50069:80"
+    working_dir: /usr/src/app
+    volumes:
+      - ./:/usr/src/app
+    command: npx nodemon pong.js
+
+networks:
+  pingpong:
